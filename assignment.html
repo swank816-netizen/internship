@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Calculator</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at top, #5e5f8b 0%, #1b1d3c 60%);
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+
+        .phone {
+            width: 320px;
+            max-width: 95vw;
+            padding: 22px;
+            border-radius: 40px;
+            background: linear-gradient(180deg, #26274f, #1a1f34);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+        }
+
+        .screen {
+            height: 120px;
+            border-radius: 24px;
+            background: rgba(255,255,255,0.08);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+            margin-bottom: 18px;
+        }
+
+        .screen .history {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.65);
+            min-height: 20px;
+            text-align: right;
+            word-wrap: break-word;
+        }
+
+        .screen .output {
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-align: right;
+            word-break: break-all;
+        }
+
+        .keys {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        button {
+            border: none;
+            border-radius: 18px;
+            padding: 20px 0;
+            font-size: 1.1rem;
+            color: #fff;
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            background: rgba(255,255,255,0.12);
+        }
+
+        .operator {
+            background: #43ffd6;
+        }
+
+        .operator:hover {
+            background: #ffb766;
+        }
+
+        .control {
+            background: #444b7a;
+        }
+
+        .control:hover {
+            background: #5a6399;
+        }
+
+        .zero {
+            grid-column: span 2;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone">
+        <div class="screen">
+            <div class="history" id="history"></div>
+            <div class="output" id="output">0</div>
+        </div>
+        <div class="keys">
+            <button class="control" data-action="clear">C</button>
+            <button class="control" data-action="delete">⌫</button>
+            <button class="control" data-action="percent">%</button>
+            <button class="operator" data-action="operator">÷</button>
+
+            <button data-action="number">7</button>
+            <button data-action="number">8</button>
+            <button data-action="number">9</button>
+            <button class="operator" data-action="operator">×</button>
+
+            <button data-action="number">4</button>
+            <button data-action="number">5</button>
+            <button data-action="number">6</button>
+            <button class="operator" data-action="operator">−</button>
+
+            <button data-action="number">1</button>
+            <button data-action="number">2</button>
+            <button data-action="number">3</button>
+            <button class="operator" data-action="operator">+</button>
+
+            <button class="zero" data-action="number">0</button>
+            <button data-action="number">.</button>
+            <button class="operator" data-action="equals">=</button>
+        </div>
+    </div>
+    <script>
+        const history = document.getElementById('history');
+        const output = document.getElementById('output');
+        let currentValue = '0';
+        let previousValue = '';
+        let operator = '';
+        let justCalculated = false;
+
+        function updateDisplay() {
+            output.textContent = currentValue;
+            history.textContent = previousValue + (operator ? ' ' + operator : '');
+        }
+
+        function appendNumber(number) {
+            if (justCalculated) {
+                currentValue = '0';
+                justCalculated = false;
+            }
+            if (number === '.' && currentValue.includes('.')) return;
+            if (currentValue === '0' && number !== '.') {
+                currentValue = number;
+            } else {
+                currentValue += number;
+            }
+        }
+
+        function chooseOperator(op) {
+            if (currentValue === '') return;
+            if (previousValue !== '') {
+                calculate();
+            }
+            operator = op;
+            previousValue = currentValue;
+            currentValue = '0';
+        }
+
+        function calculate() {
+            const prev = parseFloat(previousValue);
+            const current = parseFloat(currentValue);
+            if (isNaN(prev) || isNaN(current)) return;
+            let result = 0;
+            switch (operator) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                case '−':
+                    result = prev - current;
+                    break;
+                case '*':
+                case '×':
+                    result = prev * current;
+                    break;
+                case '÷':
+                    result = current === 0 ? 'Error' : prev / current;
+                    break;
+                default:
+                    return;
+            }
+            currentValue = result.toString();
+            operator = '';
+            previousValue = '';
+            justCalculated = true;
+        }
+
+        function clearCalculator() {
+            currentValue = '0';
+            previousValue = '';
+            operator = '';
+            justCalculated = false;
+        }
+
+        function deleteDigit() {
+            if (justCalculated) {
+                currentValue = '0';
+                justCalculated = false;
+                return;
+            }
+            if (currentValue.length > 1) {
+                currentValue = currentValue.slice(0, -1);
+            } else {
+                currentValue = '0';
+            }
+        }
+
+        function percentValue() {
+            const current = parseFloat(currentValue);
+            if (isNaN(current)) return;
+            currentValue = (current / 100).toString();
+        }
+
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', () => {
+                const action = button.dataset.action;
+                const buttonText = button.textContent;
+
+                if (action === 'number') {
+                    appendNumber(buttonText);
+                } else if (action === 'operator') {
+                    chooseOperator(buttonText);
+                } else if (action === 'equals') {
+                    calculate();
+                } else if (action === 'clear') {
+                    clearCalculator();
+                } else if (action === 'delete') {
+                    deleteDigit();
+                } else if (action === 'percent') {
+                    percentValue();
+                }
+                updateDisplay();
+            });
+        });
+
+        updateDisplay();
+    </script>
+</body>
+</html>
